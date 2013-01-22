@@ -153,11 +153,11 @@ EXTRA_CFLAGS += -I$(src)/src/shared/
 EXTRA_CFLAGS += -I$(src)/src/wl/bcmwifi/src/
 EXTRA_CFLAGS += -I$(src)/src/wl/bcmwifi/include/
 
-ifeq ($(CONFIG_MACH_T0), y)
+#ifeq ($(CONFIG_MACH_T0), y)
 #EXTRA_LDFLAGS += --strip-debug
-else
-EXTRA_LDFLAGS += --strip-debug
-endif
+#else
+#EXTRA_LDFLAGS += --strip-debug
+#endif
 KBUILD_CFLAGS += -I$(LINUXDIR)/include -I$(shell pwd)
 
 obj-m   += dhd.o
