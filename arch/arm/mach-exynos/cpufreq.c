@@ -252,6 +252,22 @@ int exynos_cpufreq_get_level(unsigned int freq, unsigned int *level)
 }
 EXPORT_SYMBOL_GPL(exynos_cpufreq_get_level);
 
+// Get the max frequency set
+// by simone201
+int exynos_cpufreq_get_maxfreq() {
+	struct cpufreq_policy *policy = cpufreq_cpu_get(0);
+	
+	return policy->max;
+}
+
+// Get current cpu freq
+// by simone201
+int exynos_cpufreq_get_curfreq() {
+	struct cpufreq_policy *policy = cpufreq_cpu_get(0);
+	
+	return policy->cur;
+}
+
 atomic_t exynos_cpufreq_lock_count;
 
 int exynos_cpufreq_lock(unsigned int nId,
@@ -749,6 +765,12 @@ static struct notifier_block exynos_cpufreq_reboot_notifier = {
 	.notifier_call = exynos_cpufreq_reboot_notifier_call,
 };
 
+/* Make sure we populate scaling_available_freqs in sysfs - netarchy */
+static struct freq_attr *exynos_cpufreq_attr[] = {
+  &cpufreq_freq_attr_scaling_available_freqs,
+  NULL,
+};
+
 static struct cpufreq_driver exynos_driver = {
 	.flags		= CPUFREQ_STICKY,
 	.verify		= exynos_verify_speed,
@@ -756,6 +778,7 @@ static struct cpufreq_driver exynos_driver = {
 	.get		= exynos_getspeed,
 	.init		= exynos_cpufreq_cpu_init,
 	.name		= "exynos_cpufreq",
+	.attr		= exynos_cpufreq_attr,
 #ifdef CONFIG_PM
 	.suspend	= exynos_cpufreq_suspend,
 	.resume		= exynos_cpufreq_resume,
@@ -836,3 +859,62 @@ err_vdd_arm:
 	return -EINVAL;
 }
 late_initcall(exynos_cpufreq_init);
+
+/* sysfs interface for UV control */
+ssize_t show_UV_mV_table(struct cpufreq_policy *policy, char *buf) {
+  
+  int i, len = 0;
+  if (buf)
+  {
+    for (i = exynos_info->max_support_idx; i<=exynos_info->min_support_idx; i++)
+    {
+      if(exynos_info->freq_table[i].frequency==CPUFREQ_ENTRY_INVALID) continue;
+      len += sprintf(buf + len, "%dmhz: %d mV\n", exynos_info->freq_table[i].frequency/1000, 
+					((exynos_info->volt_table[i] % 1000) + exynos_info->volt_table[i])/1000);
+    }
+  }
+  return len;
+}
+
+ssize_t store_UV_mV_table(struct cpufreq_policy *policy,
+                                      const char *buf, size_t count) {
+
+	unsigned int ret = -EINVAL;
+    int i = 0;
+    int j = 0;
+	int u[16];
+    ret = sscanf(buf, "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d", &u[0], &u[1], &u[2], &u[3], &u[4], &u[5], &u[6], 
+															&u[7], &u[8], &u[9], &u[10], &u[11], &u[12], &u[13], &u[14], &u[15]);
+	if(ret != 16) {
+		ret = sscanf(buf, "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %d", &u[0], &u[1], &u[2], &u[3], &u[4], &u[5], &u[6], 
+															&u[7], &u[8], &u[9], &u[10], &u[11], &u[12], &u[13], &u[14]);
+		if(ret != 15) {
+			ret = sscanf(buf, "%d %d %d %d %d %d %d %d %d %d %d %d %d %d", &u[0], &u[1], &u[2], &u[3], &u[4], &u[5], &u[6], 
+															&u[7], &u[8], &u[9], &u[10], &u[11], &u[12], &u[13]);
+			if( ret != 14)
+				return -EINVAL;
+		}
+	}
+		
+	for( i = 0; i < 16; i++ )
+	{
+		u[i] *= 1000;
+		// round down voltages - thx to AndreiLux
+		if(u[i] % 12500)
+			u[i] = (u[i] / 12500) * 12500;
+		
+		if (u[i] > CPU_UV_MV_MAX) {
+			u[i] = CPU_UV_MV_MAX;
+		}
+		else if (u[i] < CPU_UV_MV_MIN) {
+			u[i] = CPU_UV_MV_MIN;
+		}
+	}
+	
+	for( i = 0; i < 16; i++ ) {
+		while(exynos_info->freq_table[i+j].frequency==CPUFREQ_ENTRY_INVALID)
+			j++;
+		exynos_info->volt_table[i+j] = u[i];
+	}
+	return count;
+}
