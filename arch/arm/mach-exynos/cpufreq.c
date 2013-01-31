@@ -253,22 +253,6 @@ int exynos_cpufreq_get_level(unsigned int freq, unsigned int *level)
 }
 EXPORT_SYMBOL_GPL(exynos_cpufreq_get_level);
 
-// Get the max frequency set
-// by simone201
-int exynos_cpufreq_get_maxfreq() {
-	struct cpufreq_policy *policy = cpufreq_cpu_get(0);
-	
-	return policy->max;
-}
-
-// Get current cpu freq
-// by simone201
-int exynos_cpufreq_get_curfreq() {
-	struct cpufreq_policy *policy = cpufreq_cpu_get(0);
-	
-	return policy->cur;
-}
-
 atomic_t exynos_cpufreq_lock_count;
 
 int exynos_cpufreq_lock(unsigned int nId,
@@ -746,7 +730,16 @@ static int exynos_cpufreq_cpu_init(struct cpufreq_policy *policy)
 		cpumask_setall(policy->cpus);
 	}
 
-	return cpufreq_frequency_table_cpuinfo(policy, exynos_info->freq_table);
+	cpufreq_frequency_table_cpuinfo(policy, exynos_info->freq_table);
+
+	/* Safe default startup limits */
+	if (samsung_rev() >= EXYNOS4412_REV_2_0)
+		policy->max = 1600000;
+	else
+		policy->max = 1400000;
+	policy->min = 200000;
+
+	return 0;
 }
 
 static int exynos_cpufreq_reboot_notifier_call(struct notifier_block *this,
@@ -766,12 +759,6 @@ static struct notifier_block exynos_cpufreq_reboot_notifier = {
 	.notifier_call = exynos_cpufreq_reboot_notifier_call,
 };
 
-/* Make sure we populate scaling_available_freqs in sysfs - netarchy */
-static struct freq_attr *exynos_cpufreq_attr[] = {
-  &cpufreq_freq_attr_scaling_available_freqs,
-  NULL,
-};
-
 static struct cpufreq_driver exynos_driver = {
 	.flags		= CPUFREQ_STICKY,
 	.verify		= exynos_verify_speed,
@@ -779,7 +766,6 @@ static struct cpufreq_driver exynos_driver = {
 	.get		= exynos_getspeed,
 	.init		= exynos_cpufreq_cpu_init,
 	.name		= "exynos_cpufreq",
-	.attr		= exynos_cpufreq_attr,
 #ifdef CONFIG_PM
 	.suspend	= exynos_cpufreq_suspend,
 	.resume		= exynos_cpufreq_resume,
@@ -861,23 +847,69 @@ err_vdd_arm:
 }
 late_initcall(exynos_cpufreq_init);
 
-/* sysfs interface for UV control */
-ssize_t show_UV_mV_table(struct cpufreq_policy *policy, char *buf) {
-  
-  int i, len = 0;
-  if (buf)
-  {
-    for (i = exynos_info->max_support_idx; i<=exynos_info->min_support_idx; i++)
-    {
-      if(exynos_info->freq_table[i].frequency==CPUFREQ_ENTRY_INVALID) continue;
-      len += sprintf(buf + len, "%dmhz: %d mV\n", exynos_info->freq_table[i].frequency/1000, 
-					((exynos_info->volt_table[i] % 1000) + exynos_info->volt_table[i])/1000);
-    }
-  }
-  return len;
+ssize_t show_UV_uV_table(struct cpufreq_policy *policy, char *buf) {
+	int i, len = 0;
+	if (buf)
+	{
+		for (i = exynos_info->max_support_idx; i<=exynos_info->min_support_idx; i++)
+		{
+			if(exynos_info->freq_table[i].frequency==CPUFREQ_ENTRY_INVALID) continue;
+			len += sprintf(buf + len, "%d %d \n",
+				exynos_info->freq_table[i].frequency/1000,
+				exynos_info->volt_table[i]);
+		}
+	}
+	return len;
 }
 
-ssize_t store_UV_mV_table(struct cpufreq_policy *policy, const char *buf, size_t count) {
+ssize_t show_UV_mV_table(struct cpufreq_policy *policy, char *buf) {
+	int i, len = 0;
+	if (buf)
+	{
+		for (i = exynos_info->max_support_idx; i<=exynos_info->min_support_idx; i++)
+		{
+			if(exynos_info->freq_table[i].frequency==CPUFREQ_ENTRY_INVALID) continue;
+			len += sprintf(buf + len, "%dmhz: %d mV\n",
+				exynos_info->freq_table[i].frequency/1000,
+				((exynos_info->volt_table[i] % 1000) + exynos_info->volt_table[i])/1000);
+		}
+	}
+	return len;
+}
+
+ssize_t store_UV_uV_table(struct cpufreq_policy *policy,
+				 const char *buf, size_t count) {
+
+	int i, tokens, top_offset, invalid_offset;
+	int t[CPUFREQ_LEVEL_END];
+
+	top_offset = 0;
+	invalid_offset = 0;
+
+	if((tokens = read_into((int*)&t, CPUFREQ_LEVEL_END, buf, count)) < 0)
+		return -EINVAL;
+
+	if(tokens != CPUFREQ_LEVEL_END) {
+		top_offset = CPUFREQ_LEVEL_END - tokens;
+	}
+	
+	for (i = 0 + top_offset; i < CPUFREQ_LEVEL_END; i++) {
+		if (t[i] > CPU_UV_MV_MAX)
+			t[i] = CPU_UV_MV_MAX;
+		else if (t[i] < CPU_UV_MV_MIN)
+			t[i] = CPU_UV_MV_MIN;
+
+		while(exynos_info->freq_table[i+invalid_offset].frequency==CPUFREQ_ENTRY_INVALID)
+			++invalid_offset;
+
+		exynos_info->volt_table[i+invalid_offset] = t[i];
+	}
+	
+	return count;
+}
+
+ssize_t store_UV_mV_table(struct cpufreq_policy *policy,
+				 const char *buf, size_t count) {
 
 	int i, tokens, top_offset, invalid_offset;
 	int t[CPUFREQ_LEVEL_END];
@@ -904,9 +936,9 @@ ssize_t store_UV_mV_table(struct cpufreq_policy *policy, const char *buf, size_t
 				t[i] -= rest;
 		}
 		
-		if (t[i] > CPU_UV_MV_MAX) 
+		if (t[i] > CPU_UV_MV_MAX)
 			t[i] = CPU_UV_MV_MAX;
-		else if (t[i] < CPU_UV_MV_MIN) 
+		else if (t[i] < CPU_UV_MV_MIN)
 			t[i] = CPU_UV_MV_MIN;
 
 		while(exynos_info->freq_table[i+invalid_offset].frequency==CPUFREQ_ENTRY_INVALID)

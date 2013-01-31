@@ -368,6 +368,7 @@ void request_active_lock_release(const char *name)
 	pr_info("%s\n", __func__);
 	if (pm_data)
 		wake_unlock(&pm_data->l2_wake);
+
 }
 
 void request_boot_lock_set(const char *name)

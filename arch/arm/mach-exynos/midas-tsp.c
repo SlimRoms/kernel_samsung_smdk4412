@@ -2189,6 +2189,7 @@ int TSP_VDD_18V(bool on)
 int melfas_power(bool on)
 {
 	struct regulator *regulator;
+	int ret;
 	if (enabled == on)
 		return 0;
 
