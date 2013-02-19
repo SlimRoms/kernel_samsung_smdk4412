@@ -3919,8 +3919,24 @@ dhd_preinit_ioctls(dhd_pub_t *dhd)
 #ifdef PKT_FILTER_SUPPORT
 	/* Setup default defintions for pktfilter , enable in suspend */
 	dhd->pktfilter_count = 1;
-	/* Setup filter to allow unicast only */
+	/* Setup filter to allow only unicast */
 	dhd->pktfilter[0] = "100 0 0 0 0x01 0x00";
+
+#ifdef CUSTOMER_HW4
+#if defined(BLOCK_IPV6_PACKET)
+	dhd->pktfilter[0] = "100 0 0 0 "
+		HEX_PREF_STR UNI_FILTER_STR ZERO_ADDR_STR ETHER_TYPE_STR IPV6_FILTER_STR
+		" "
+		HEX_PREF_STR ZERO_ADDR_STR ZERO_ADDR_STR ETHER_TYPE_STR ZERO_TYPE_STR;
+#endif /* BLOCK_IPV6_PACKET */
+#if defined(PASS_IPV4_SUSPEND)
+	dhd->pktfilter_count = 2;
+	dhd->pktfilter[1] = "104 0 0 0 0xFFFFFF 0x01005E";
+#endif
+#ifdef PASS_ARP_PACKET
+	dhd->pktfilter[dhd->pktfilter_count++] = "105 0 0 12 0xFFFF 0x0806";
+#endif
+#endif /* CUSTOMER_HW4 */
 
 #if defined(SOFTAP)
 	if (ap_fw_loaded) {
