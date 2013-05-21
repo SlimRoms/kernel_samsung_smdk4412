@@ -1541,6 +1541,7 @@ CONFIG_INPUT_GPIO=y
 # CONFIG_INPUT_CMA3000 is not set
 # CONFIG_INPUT_FLIP is not set
 # CONFIG_INPUT_KR3DH is not set
+CONFIG_TOUCH_WAKE=y
 
 #
 # Hardware I/O ports
