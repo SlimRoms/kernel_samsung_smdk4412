@@ -1992,8 +1992,8 @@ static int ext4_fill_flex_info(struct super_block *sb)
 		flex_group = ext4_flex_group(sbi, i);
 		atomic_add(ext4_free_inodes_count(sb, gdp),
 			   &sbi->s_flex_groups[flex_group].free_inodes);
-		atomic64_add(ext4_free_blks_count(sb, gdp),
-			     &sbi->s_flex_groups[flex_group].free_blocks);
+		atomic_add(ext4_free_blks_count(sb, gdp),
+			   &sbi->s_flex_groups[flex_group].free_blocks);
 		atomic_add(ext4_used_dirs_count(sb, gdp),
 			   &sbi->s_flex_groups[flex_group].used_dirs);
 	}
@@ -3622,7 +3622,8 @@ no_journal:
 		goto failed_mount4;
 	}
 
-	ext4_setup_super(sb, es, sb->s_flags & MS_RDONLY);
+	if (ext4_setup_super(sb, es, sb->s_flags & MS_RDONLY))
+		sb->s_flags |= MS_RDONLY;
 
 	/* determine the minimum size of new large inodes, if present */
 	if (sbi->s_inode_size > EXT4_GOOD_OLD_INODE_SIZE) {
@@ -3680,19 +3681,22 @@ no_journal:
 	if (err) {
 		ext4_msg(sb, KERN_ERR, "failed to initialize mballoc (%d)",
 			 err);
-		goto failed_mount5;
+		goto failed_mount4;
 	}
 
 	err = ext4_register_li_request(sb, first_not_zeroed);
 	if (err)
-		goto failed_mount6;
+		goto failed_mount4;
 
 	sbi->s_kobj.kset = ext4_kset;
 	init_completion(&sbi->s_kobj_unregister);
 	err = kobject_init_and_add(&sbi->s_kobj, &ext4_ktype, NULL,
 				   "%s", sb->s_id);
-	if (err)
-		goto failed_mount7;
+	if (err) {
+		ext4_mb_release(sb);
+		ext4_ext_release(sb);
+		goto failed_mount4;
+	};
 
 	EXT4_SB(sb)->s_mount_state |= EXT4_ORPHAN_FS;
 	ext4_orphan_cleanup(sb, es);
@@ -3734,19 +3738,13 @@ cantfind_ext4:
 
 	goto failed_mount;
 
-failed_mount7:
-	ext4_unregister_li_request(sb);
-failed_mount6:
-	ext4_ext_release(sb);
-failed_mount5:
-	ext4_mb_release(sb);
-	ext4_release_system_zone(sb);
 failed_mount4:
 	iput(root);
 	sb->s_root = NULL;
 	ext4_msg(sb, KERN_ERR, "mount failed");
 	destroy_workqueue(EXT4_SB(sb)->dio_unwritten_wq);
 failed_mount_wq:
+	ext4_release_system_zone(sb);
 	if (sbi->s_journal) {
 		jbd2_journal_destroy(sbi->s_journal);
 		sbi->s_journal = NULL;

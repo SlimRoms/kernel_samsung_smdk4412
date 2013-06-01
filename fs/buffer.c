@@ -984,11 +984,11 @@ init_page_buffers(struct page *page, struct block_device *bdev,
 		block++;
 		bh = bh->b_this_page;
 	} while (bh != head);
-	
+
 	/*
- 	 * Caller needs to validate requested block against end of device.
- 	 */
- 	return end_block;
+	 * Caller needs to validate requested block against end of device.
+	 */
+	return end_block;
 }
 
 /*
@@ -998,7 +998,7 @@ init_page_buffers(struct page *page, struct block_device *bdev,
  */
 static int
 grow_dev_page(struct block_device *bdev, sector_t block,
-	  pgoff_t index, int size, int sizebits)
+		pgoff_t index, int size, int sizebits)
 {
 	struct inode *inode = bdev->bd_inode;
 	struct page *page;

@@ -29,13 +29,13 @@ AFLAGS_sleep-exynos4.o :=$(call as-instr,.arch_extension sec,-DREQUIRES_SEC=1)
 
 obj-$(CONFIG_EXYNOS5_PM)	+= pm-exynos5.o sleep-exynos5.o
 obj-$(CONFIG_CPU_FREQ)		+= cpufreq.o
-obj-$(CONFIG_EXYNOS4_CPUFREQ)	+= asv.o
+obj-$(CONFIG_EXYNOS4_CPUFREQ)  += asv.o
 ifeq ($(CONFIG_CPU_EXYNOS4210),y)
-obj-$(CONFIG_EXYNOS4_CPUFREQ)	+= asv-4210.o
-obj-$(CONFIG_EXYNOS4_CPUFREQ)	+= cpufreq-4210.o
+obj-$(CONFIG_EXYNOS4_CPUFREQ)  += asv-4210.o
+obj-$(CONFIG_EXYNOS4_CPUFREQ)  += cpufreq-4210.o
 else
-obj-$(CONFIG_EXYNOS4_CPUFREQ)	+= asv-4x12.o
-obj-$(CONFIG_EXYNOS4_CPUFREQ)	+= cpufreq-4x12.o
+obj-$(CONFIG_EXYNOS4_CPUFREQ)  += asv-4x12.o
+obj-$(CONFIG_EXYNOS4_CPUFREQ)  += cpufreq-4x12.o
 endif
 obj-$(CONFIG_EXYNOS5_CPUFREQ)	+= asv.o asv-5250.o
 obj-$(CONFIG_EXYNOS5_CPUFREQ)	+= cpufreq-5250.o
@@ -147,12 +147,7 @@ ifeq ($(CONFIG_MACH_M3),y)
 obj-$(CONFIG_MIDAS_COMMON)		+= sec-common.o \
 					   midas-tsp.o board-midas-wlan.o \
 					   midas-camera.o midas-thermistor.o \
-					   midas-mhl.o midas-lcd.o
-ifeq ($(CONFIG_MACH_M3_USA_TMO),y)
-obj-$(CONFIG_MIDAS_COMMON)		+= t0-sound.o
-else
-obj-$(CONFIG_MIDAS_COMMON)		+= midas-sound.o
-endif
+					   midas-mhl.o midas-lcd.o midas-sound.o
 else
 ifeq ($(CONFIG_MACH_T0),y)
 obj-$(CONFIG_MIDAS_COMMON)		+= sec-common.o \
@@ -165,9 +160,8 @@ ifeq ($(CONFIG_MACH_P4NOTE),y)
 obj-$(CONFIG_MIDAS_COMMON)		+= sec-common.o\
 					   midas-tsp.o board-midas-wlan.o \
 					   midas-camera.o midas-thermistor.o \
-					   midas-mhl.o midas-lcd.o midas-sound.o
-obj-$(CONFIG_SEC_MODEM)			+= board-gps-bcm475x.o
-obj-$(CONFIG_GPS_BRCM_475X)		+= board-gps-bcm475x.o
+					   midas-mhl.o midas-lcd.o midas-sound.o \
+					   board-gps-bcm475x.o
 else
 ifeq ($(CONFIG_MACH_SLP_T0_LTE),y)
 obj-$(CONFIG_MIDAS_COMMON)		+= sec-common.o \
@@ -318,7 +312,6 @@ obj-$(CONFIG_GPS_BCM47511)		+= bcm47511.o
 obj-$(CONFIG_GPS_BCM4752)		+= bcm4752.o
 obj-$(CONFIG_GPS_GSD4T)			+= gsd4t.o
 obj-$(CONFIG_SEC_THERMISTOR)		+= sec_thermistor.o
-obj-$(CONFIG_SEC_SUBTHERMISTOR)		+= sec_subthermistor.o
 obj-$(CONFIG_EXYNOS_SYSREG_PM)		+= sysreg.o
 
 obj-$(CONFIG_EXYNOS4_DEV_TMU)           += dev-slp-tmu.o

@@ -28,6 +28,8 @@
 #include <mach/cpufreq.h>
 #include <linux/input/mt.h>
 
+#include "../keyboard/cypress/cypress-touchkey.h"
+
 #define OBJECT_TABLE_START_ADDRESS	7
 #define OBJECT_TABLE_ELEMENT_SIZE	6
 
@@ -187,7 +189,7 @@ struct mxt224_data {
 	bool median_err_flag;
 	int touch_is_pressed_arr[MAX_USING_FINGER_NUM];
 
-#if defined(CONFIG_TARGET_LOCALE_NAATT)
+#if defined(CONFIG_TARGET_LOCALE_NAATT) || defined(CONFIG_TARGET_LOCALE_NAATT_TEMP)
 	bool gain_change_flag;
 	int gain_ta;
 #endif
@@ -766,7 +768,7 @@ void check_chip_calibration(unsigned char one_touch_input_flag)
 			}
 		}
 
-		printk(KERN_ERR "[TSP] t: %d, a: %d\n", tch_ch, atch_ch);
+		pr_debug("[TSP] t: %d, a: %d\n", tch_ch, atch_ch);
 
 		/* send page up command so we can detect
 		when data updates next time, page byte will sit at 1
@@ -1240,7 +1242,7 @@ static void report_input_data(struct mxt224_data *data)
 			printk(KERN_ERR "[TSP] Up[%d] %4d,%4d\n", i,
 			       data->fingers[i].x, data->fingers[i].y);
 #else
-			printk(KERN_ERR "[TSP] Up[%d]\n", i);
+			pr_debug("[TSP] Up[%d]\n", i);
 #endif
 
 			continue;
@@ -1284,7 +1286,7 @@ static void report_input_data(struct mxt224_data *data)
 			       data->fingers[i].x, data->fingers[i].y);
 #else
 		if (copy_data->touch_is_pressed_arr[i] == 1) {
-			printk(KERN_ERR "[TSP] Dn[%d]\n", i);
+			pr_debug("[TSP] Dn[%d]\n", i);
 			copy_data->touch_is_pressed_arr[i] = 2;
 		}
 #endif
@@ -1337,6 +1339,10 @@ static void report_input_data(struct mxt224_data *data)
 			copy_data->lock_status = 1;
 		}
 	}
+
+    /* tell cypress keypad we had finger activity */
+    touchscreen_state_report(touch_is_pressed);
+
 }
 
 void palm_recovery(void)

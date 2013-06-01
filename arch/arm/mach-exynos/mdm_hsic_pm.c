@@ -35,11 +35,14 @@
 #include <linux/usb.h>
 #include <linux/usb/hcd.h>
 #include <linux/usb/ehci_def.h>
+#include <mach/mdm2.h>
+#include <linux/kernel.h>
 
 #ifdef CONFIG_CPU_FREQ_TETHERING
-#include <linux/kernel.h>
 #include <linux/netdevice.h>
-#include <mach/mdm2.h>
+#endif
+
+#ifdef CONFIG_USB_ANDROID_SAMSUNG_COMPOSITE
 #include <linux/usb/android_composite.h>
 #endif
 
@@ -89,6 +92,8 @@ struct mdm_hsic_pm_data {
 	struct notifier_block pm_notifier;
 #ifdef CONFIG_CPU_FREQ_TETHERING
 	struct notifier_block netdev_notifier;
+#endif
+#ifdef CONFIG_USB_ANDROID_SAMSUNG_COMPOSITE
 	struct notifier_block usb_composite_notifier;
 #endif
 
@@ -981,7 +986,9 @@ static int link_pm_netdev_event(struct notifier_block *this,
 	}
 	return NOTIFY_DONE;
 }
+#endif
 
+#ifdef CONFIG_USB_ANDROID_SAMSUNG_COMPOSITE
 static int usb_composite_notifier_event(struct notifier_block *this,
 		unsigned long event, void *ptr)
 {
@@ -1070,7 +1077,9 @@ static int mdm_hsic_pm_probe(struct platform_device *pdev)
 #ifdef CONFIG_CPU_FREQ_TETHERING
 	pm_data->netdev_notifier.notifier_call = link_pm_netdev_event;
 	register_netdevice_notifier(&pm_data->netdev_notifier);
+#endif
 
+#ifdef CONFIG_USB_ANDROID_SAMSUNG_COMPOSITE
 	pm_data->usb_composite_notifier.notifier_call =
 		usb_composite_notifier_event;
 	register_usb_composite_notifier(&pm_data->usb_composite_notifier);

@@ -633,15 +633,6 @@ config SEC_THERMISTOR
 	 U1 has two thermistors. this device driver use one of those
 	 to check system temperature.
 
-config SEC_SUBTHERMISTOR
-	bool "Use sub thermistor"
-	depends on SAMSUNG_DEV_ADC
-	default n
-	help
-	  Use sub thermistor driver.
-	  This device driver use only Japan model.
-	  Japan model has sub thermistors.
-
 config EXYNOS_SYSREG_PM
 	bool "PM Support for System Registers"
 	depends on CPU_EXYNOS4210 || CPU_EXYNOS4412 || CPU_EXYNOS4212
@@ -881,8 +872,9 @@ config MACH_Q1_BD
 
 endchoice
 config TARGET_LOCALE_NAATT_TEMP
-        bool "Support North America GSM ATT Board"
-        default n
+    bool "Support North America GSM ATT Board"
+	depends on MACH_U1
+    default n
 
 config MACH_PX
 	bool "PX board"
@@ -1734,11 +1726,6 @@ endchoice
 
 endif
 
-comment "Connectivity Feature"
-config GPS_BRCM_475X
-	bool "BRCM_475X_CHIPSET"
-	default n
-
 if BT
 config BT_CSR8811
 	bool "Enable CSR8811 driver"
@@ -1788,10 +1775,6 @@ config EMI_ERROR_RECOVERY
 	bool "unsuspected emi error recovery on HUB"
 	default n
 
-config SIM_DETECT
-	bool "support sim detect"
-	default n
-
 if QC_MODEM
 choice
 	prompt "QC MODEM CONFIG"
@@ -1831,8 +1814,3 @@ config CORESIGHT_ETM_DEFAULT_ENABLE
 	help
 	  Turns on ETM tracing by default. Otherwise, tracing is
 	  disabled by default but can be enabled by other means.
-
-config CPU_FREQ_TETHERING
-	bool "Lock cpu freq & bus clock when tethering mode turn on"
-	depends on QC_MODEM
-	default n

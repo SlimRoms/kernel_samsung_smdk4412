@@ -5095,9 +5095,9 @@ struct gpio_keys_button u1_buttons[] = {
 		.isr_hook = sec_debug_check_crash_key,
 		.debounce_interval = 10,
 	},			/* power key */
-#if !defined(CONFIG_MACH_U1_NA_SPR) && !defined(CONFIG_MACH_U1_NA_USCC)
+#if !defined(CONFIG_MACH_U1_NA_SPR) && !defined(CONFIG_MACH_U1_NA_USCC) && !defined(CONFIG_TARGET_LOCALE_NAATT_TEMP)
 	{
-		.code = KEY_HOMEPAGE,
+		.code = KEY_HOME,
 		.gpio = GPIO_OK_KEY,
 		.active_low = 1,
 		.type = EV_KEY,
@@ -5457,9 +5457,9 @@ static const u8 *mxt224_config[] = {
 #define MXT224E_NEXTTCHDI_NORMAL		0
 #define MXT224E_NEXTTCHDI_CHRG		1
 #else
-#define MXT224E_THRESHOLD_BATT		50
+#define MXT224E_THRESHOLD_BATT		40
 #define MXT224E_T48_THRESHOLD_BATT		28
-#define MXT224E_THRESHOLD_CHRG		40
+#define MXT224E_THRESHOLD_CHRG		37
 #define MXT224E_CALCFG_BATT		0x42
 #define MXT224E_CALCFG_CHRG		0x52
 #if defined(CONFIG_TARGET_LOCALE_NA)
@@ -7482,17 +7482,6 @@ static void __init exynos4_cma_region_reserve(struct cma_region *regions_normal,
 			continue;
 
 		if (reg->start) {
-#if defined(CONFIG_USE_MFC_CMA) && defined(CONFIG_MACH_Q1_BD)
-			if (reg->start == 0x67200000) {
-				if (!memblock_is_region_reserved
-					(reg->start, 0x600000) &&
-					memblock_reserve(reg->start,
-						reg->size) >= 0)
-					reg->reserved = 1;
-			} else if (reg->start == 0x68400000)
-				reg->reserved = 1;
-			else
-#endif
 			if (!memblock_is_region_reserved(reg->start, reg->size)
 			    && memblock_reserve(reg->start, reg->size) >= 0)
 				reg->reserved = 1;
@@ -7504,10 +7493,6 @@ static void __init exynos4_cma_region_reserve(struct cma_region *regions_normal,
 				reg->reserved = 1;
 			}
 		}
-
-		if (reg->reserved)
-			pr_info("S5P/CMA: Reserved 0x%08x/0x%08x for '%s'\n",
-				reg->start, reg->size, reg->name);
 	}
 
 	if (regions_secure && regions_secure->size) {
@@ -7602,11 +7587,7 @@ static void __init exynos4_reserve_mem(void)
 			{
 				.alignment = 1 << 17,
 			},
-#if defined(CONFIG_USE_MFC_CMA) && defined(CONFIG_MACH_Q1_BD)
-			.start = 0x68400000,
-#else
 			.start = 0,
-#endif
 		},
 #endif
 #ifdef CONFIG_VIDEO_SAMSUNG_MEMSIZE_MFC0
@@ -7616,11 +7597,7 @@ static void __init exynos4_reserve_mem(void)
 			{
 				.alignment = 1 << 17,
 			},
-#if defined(CONFIG_USE_MFC_CMA) && defined(CONFIG_MACH_Q1_BD)
-			.start = 0x67200000,
-#else
 			.start = 0,
-#endif
 		},
 #endif
 #ifdef CONFIG_VIDEO_SAMSUNG_MEMSIZE_MFC
@@ -7658,12 +7635,7 @@ static void __init exynos4_reserve_mem(void)
 		{
 			.name = "tvout",
 			.size = CONFIG_VIDEO_SAMSUNG_MEMSIZE_TVOUT * SZ_1K,
-#ifdef CONFIG_USE_TVOUT_CMA
-			.start = 0x65800000,
-			.reserved = 1,
-#else
 			.start = 0,
-#endif
 		},
 #endif
 		{
@@ -7698,25 +7670,6 @@ static void __init exynos4_reserve_mem(void)
 
 }
 #endif
-
-static void __init exynos_reserve(void)
-{
-#ifdef CONFIG_USE_TVOUT_CMA
-	if (dma_declare_contiguous(&s5p_device_tvout.dev,
-			CONFIG_VIDEO_SAMSUNG_MEMSIZE_TVOUT * SZ_1K,
-			0x65800000, 0))
-		printk(KERN_ERR "%s: failed to reserve contiguous "
-			"memory region for TVOUT\n", __func__);
-#endif
-
-#ifdef CONFIG_USE_MFC_CMA
-	if (dma_declare_contiguous(&s5p_device_mfc.dev,
-			SZ_1M * 40, 0x67800000, 0))
-		printk(KERN_ERR "%s: failed to reserve contiguous "
-			"memory region for MFC0/1\n", __func__);
-#endif
-}
-
 
 static void __init exynos_sysmmu_init(void)
 {
@@ -8165,5 +8118,4 @@ MACHINE_START(SMDKC210, MODEL_NAME)
 	.init_machine	= smdkc210_machine_init,
 	.timer		= &exynos4_timer,
 	.init_early	= &exynos_init_reserve,
-	.reserve	= &exynos_reserve,
 MACHINE_END

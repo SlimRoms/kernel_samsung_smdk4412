@@ -40,9 +40,6 @@
 #include "wm8994.h"
 #include "wm_hubs.h"
 
-// Wolfson Sound Control
-#include "wolfson_sound.h"
-
 #define WM1811_JACKDET_MODE_NONE  0x0000
 #define WM1811_JACKDET_MODE_JACK  0x0100
 #define WM1811_JACKDET_MODE_MIC   0x0080
@@ -202,9 +199,6 @@ static int wm8994_write(struct snd_soc_codec *codec, unsigned int reg,
 	int ret;
 
 	BUG_ON(reg > WM8994_MAX_REGISTER);
-
-	// Wolfson Sound Control
-	value = Wolfson_sound_hook_wm8994_write(reg, value);
 
 	if (!wm8994_volatile(codec, reg)) {
 		ret = snd_soc_cache_write(codec, reg, value);
@@ -2772,7 +2766,7 @@ static int wm8994_hw_params(struct snd_pcm_substream *substream,
 		return -EINVAL;
 	}
 
-	bclk_rate = params_rate(params) * 2;
+	bclk_rate = params_rate(params) * 4;
 	switch (params_format(params)) {
 	case SNDRV_PCM_FORMAT_S16_LE:
 		bclk_rate *= 16;
@@ -2895,7 +2889,6 @@ static int wm8994_aif3_hw_params(struct snd_pcm_substream *substream,
 		default:
 			return 0;
 		}
-		break;
 	default:
 		return 0;
 	}
@@ -4220,9 +4213,6 @@ static int wm8994_codec_probe(struct snd_soc_codec *codec)
 					ARRAY_SIZE(wm8958_intercon));
 		break;
 	}
-
-	// Wolfson Sound Control
-	Wolfson_sound_hook_wm8994_pcm_probe(codec);
 
 	return 0;
 

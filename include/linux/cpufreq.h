@@ -24,13 +24,6 @@
 
 #define CPUFREQ_NAME_LEN 16
 
-#if defined(CONFIG_CPU_EXYNOS4212) || defined(CONFIG_CPU_EXYNOS4412)
-#define CPUFREQ_LEVEL_END		(L14 + 1)
-#endif
-
-/* CPU UV DEFINES */
-#define CPU_UV_MV_MAX 1500000
-#define CPU_UV_MV_MIN 600000
 
 /*********************************************************************
  *                     CPUFREQ NOTIFIER INTERFACE                    *
@@ -370,9 +363,6 @@ extern struct cpufreq_governor cpufreq_gov_powersave;
 #elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_USERSPACE)
 extern struct cpufreq_governor cpufreq_gov_userspace;
 #define CPUFREQ_DEFAULT_GOVERNOR	(&cpufreq_gov_userspace)
-#elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_LULZACTIVE)
-extern struct cpufreq_governor cpufreq_gov_lulzactive;
-#define CPUFREQ_DEFAULT_GOVERNOR	(&cpufreq_gov_lulzactive)
 #elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_ONDEMAND)
 extern struct cpufreq_governor cpufreq_gov_ondemand;
 #define CPUFREQ_DEFAULT_GOVERNOR	(&cpufreq_gov_ondemand)
@@ -388,9 +378,6 @@ extern struct cpufreq_governor cpufreq_gov_adaptive;
 #elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_PEGASUSQ)
 extern struct cpufreq_governor cpufreq_gov_pegasusq;
 #define CPUFREQ_DEFAULT_GOVERNOR	(&cpufreq_gov_pegasusq)
-#elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_LAZY)
-extern struct cpufreq_governor cpufreq_gov_lazy;
-#define CPUFREQ_DEFAULT_GOVERNOR	(&cpufreq_gov_lazy)
 #endif
 
 

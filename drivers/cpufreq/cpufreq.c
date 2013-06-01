@@ -553,12 +553,6 @@ static ssize_t show_scaling_setspeed(struct cpufreq_policy *policy, char *buf)
 	return policy->governor->show_setspeed(policy, buf);
 }
 
-
-/* sysfs interface for UV control */
-extern ssize_t show_UV_mV_table(struct cpufreq_policy *policy, char *buf);
-extern ssize_t store_UV_mV_table(struct cpufreq_policy *policy,
-                                      const char *buf, size_t count);
-
 /**
  * show_scaling_driver - show the current cpufreq HW/BIOS limitation
  */
@@ -588,8 +582,6 @@ cpufreq_freq_attr_rw(scaling_min_freq);
 cpufreq_freq_attr_rw(scaling_max_freq);
 cpufreq_freq_attr_rw(scaling_governor);
 cpufreq_freq_attr_rw(scaling_setspeed);
-/* UV table */
-cpufreq_freq_attr_rw(UV_mV_table);
 
 static struct attribute *default_attrs[] = {
 	&cpuinfo_min_freq.attr,
@@ -603,7 +595,6 @@ static struct attribute *default_attrs[] = {
 	&scaling_driver.attr,
 	&scaling_available_governors.attr,
 	&scaling_setspeed.attr,
-	&UV_mV_table.attr,
 	NULL
 };
 
@@ -950,16 +941,6 @@ static int cpufreq_add_dev(struct sys_device *sys_dev)
 		pr_debug("initialization failed\n");
 		goto err_unlock_policy;
 	}
-#ifdef CONFIG_HOTPLUG_CPU
-	for_each_online_cpu(sibling) {
-		struct cpufreq_policy *cp = per_cpu(cpufreq_cpu_data, sibling);
-		if (cp && cp->governor && (cpumask_test_cpu(cpu, cp->related_cpus))) {
-			policy->min = cp->min;
-			policy->max = cp->max;
-			break;
-		}
-	}
-#endif
 	policy->user_policy.min = policy->min;
 	policy->user_policy.max = policy->max;
 
