@@ -322,6 +322,14 @@ static ssize_t light_enable_store(struct device *dev,
 		return -EINVAL;
 	}
 
+#ifdef CONFIG_TOUCH_WAKE
+	if (new_value) { // true if proximity detected
+		proximity_detected();
+	} else {
+		proximity_off();
+	}
+#endif
+
 	mutex_lock(&cm36651->power_lock);
 	pr_info("%s,new_value=%d\n", __func__, new_value);
 	if (new_value && !(cm36651->power_state & LIGHT_ENABLED)) {
