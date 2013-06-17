@@ -15,6 +15,8 @@
 
 #include <linux/notifier.h>
 #include <linux/earlysuspend.h>
+#include <linux/sysfs.h>
+#include <linux/workqueue.h>
 
 #include <mach/ppmu.h>
 
