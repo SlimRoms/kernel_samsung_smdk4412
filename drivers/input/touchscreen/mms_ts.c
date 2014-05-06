@@ -50,6 +50,8 @@
 
 #include <asm/unaligned.h>
 
+#include "../keyboard/cypress/cypress-touchkey.h"
+
 #ifdef CONFIG_TOUCH_WAKE
 #include <linux/touch_wake.h>
 #endif
@@ -684,6 +686,9 @@ static irqreturn_t mms_ts_interrupt(int irq, void *dev_id)
 				, angle, palm);
 #else
 			if (info->finger_state[id] != 0) {
+                // report state to cypress-touchkey for backlight timeout
+                touchscreen_state_report(0);
+
 				dev_notice(&client->dev,
 					"finger [%d] up, palm %d\n", id, palm);
 			}
@@ -722,6 +727,10 @@ static irqreturn_t mms_ts_interrupt(int irq, void *dev_id)
 #else
 		if (info->finger_state[id] == 0) {
 			info->finger_state[id] = 1;
+
+            // report state to cypress-touchkey for backlight timeout
+            touchscreen_state_report(1);
+
 			dev_notice(&client->dev,
 				"finger [%d] down, palm %d\n", id, palm);
 		}
